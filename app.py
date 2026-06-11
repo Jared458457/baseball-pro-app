@@ -3,9 +3,9 @@ from ortools.sat.python import cp_model
 from engine import build_model, add_pitching, add_objective, add_position_constraints
 import pandas as pd
 
-st.title("⚾ Locked Pro Baseball Scheduler")
+st.title("⚾ Rangers Pro Baseball Scheduler")
 
-if st.button("Generate Season"):
+if st.button("Generate 14 Game Season"):
 
     model, y, pos = build_model()
 
