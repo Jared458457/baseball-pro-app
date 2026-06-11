@@ -1,9 +1,3 @@
-import os
-import streamlit as st
-
-st.write("Working dir:", os.getcwd())
-st.write("Files:", os.listdir())
-
 import streamlit as st
 from ortools.sat.python import cp_model
 from engine import build_model, add_pitching, add_objective
