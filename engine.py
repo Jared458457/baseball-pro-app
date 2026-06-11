@@ -50,6 +50,21 @@ def build_model():
 
     return model, x
 
+def add_objective(model, x):
+
+    total = []
+
+    for p in range(13):
+        tp = sum(x[g,i,p,pos]
+                 for g in range(14)
+                 for i in range(6)
+                 for pos in range(9))
+        total.append(tp)
+
+    avg = (14*6*9)//13
+
+    model.Minimize(sum((tp - avg)*(tp - avg) for tp in total))
+
 def add_pitching(model, x):
 
     pitch_plan = [
