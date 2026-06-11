@@ -5,9 +5,9 @@ games = 14
 innings = 6
 positions = 9
 
-catchers = {0,3,8,11}
-no_3b = {1,4,6}
-pitchers = [2,3,5,8,9,11,12]
+catchers = {1,4,9,12}
+no_3b = {2,5,7}
+pitchers = [3,4,6,9,10,12,13]
 
 def build_model():
 
