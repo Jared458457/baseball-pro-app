@@ -38,22 +38,36 @@ def build_model():
 
 def add_position_constraints(model, y, pos):
 
+    GAMES = 14
+    INNINGS = 6
+    PLAYERS = 13
+
+    catchers = {0,3,8,11}
+    no_3b = {1,4,6}
+
+    # ----------------------------
     # Catcher restriction
+    # ----------------------------
     for g in range(GAMES):
         for i in range(INNINGS):
             for p in range(PLAYERS):
-                is_catcher_allowed = (p in catchers)
-                # if not allowed catcher, cannot take position 1
-                model.Add(pos[g,i,p] != 1).OnlyEnforceIf(y[g,i,p].Not()).OnlyEnforceIf(model.NewBoolVar("tmp"))
 
-                if not is_catcher_allowed:
-                    model.Add(pos[g,i,p] != 1).OnlyEnforceIf(y[g,i,p])
+                is_playing = y[g,i,p]
 
+                # if player is NOT a catcher, forbid position 1
+                if p not in catchers:
+                    model.Add(pos[g,i,p] != 1).OnlyEnforceIf(is_playing)
+
+    # ----------------------------
     # 3B restriction
+    # ----------------------------
     for g in range(GAMES):
         for i in range(INNINGS):
             for p in no_3b:
-                model.Add(pos[g,i,p] != 4).OnlyEnforceIf(y[g,i,p])
+
+                is_playing = y[g,i,p]
+
+                model.Add(pos[g,i,p] != 4).OnlyEnforceIf(is_playing)
 
 
 def add_pitching(model, y):
