@@ -25,7 +25,15 @@ def build_model():
         for i in range(innings):
             for pos in range(positions):
                 model.Add(sum(x[g,i,p,pos] for p in range(players)) == 1)
-
+                
+    # Each player can only play ONE position per inning
+    for g in range(games):
+        for i in range(innings):
+            for p in range(players):
+                model.Add(
+                    sum(x[g,i,p,pos] for pos in range(positions)) <= 1
+                )
+    
     # Each player plays 4–5 innings per game
     for g in range(games):
         for p in range(players):
