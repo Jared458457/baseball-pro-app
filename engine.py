@@ -46,6 +46,18 @@ def add_position_constraints(model, y, pos):
     no_3b = {1,4,6}
 
     # ----------------------------
+    # POSITIONS ONLY VALID IF PLAYER IS ACTIVE
+    # ----------------------------
+    for g in range(GAMES):
+        for i in range(INNINGS):
+            for p in range(PLAYERS):
+
+                is_playing = y[g,i,p]
+
+                # If not playing, force pos = 0 (dummy safe value)
+                model.Add(pos[g,i,p] == 0).OnlyEnforceIf(is_playing.Not())
+
+    # ----------------------------
     # Catcher restriction
     # ----------------------------
     for g in range(GAMES):
@@ -54,7 +66,6 @@ def add_position_constraints(model, y, pos):
 
                 is_playing = y[g,i,p]
 
-                # if player is NOT a catcher, forbid position 1
                 if p not in catchers:
                     model.Add(pos[g,i,p] != 1).OnlyEnforceIf(is_playing)
 
@@ -68,7 +79,6 @@ def add_position_constraints(model, y, pos):
                 is_playing = y[g,i,p]
 
                 model.Add(pos[g,i,p] != 4).OnlyEnforceIf(is_playing)
-
 
 def add_pitching(model, y):
 
