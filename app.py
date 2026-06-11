@@ -1,18 +1,17 @@
 import streamlit as st
-from engine import build_model, add_pitching, add_objective
 from ortools.sat.python import cp_model
+from engine import build_model, add_pitching, add_objective, add_position_constraints
 import pandas as pd
 
-st.set_page_config(page_title="Pro Baseball Coach App", layout="wide")
-
-st.title("⚾ Pro Baseball Coach App (Live)")
-
-st.write("Generate a fully optimized 14-game season with constraints enforced.")
+st.title("⚾ Locked Pro Baseball Scheduler")
 
 if st.button("Generate Season"):
-    model, x = build_model()
-    add_pitching(model, x)
-    add_objective(model, x)
+
+    model, y, pos = build_model()
+
+    add_pitching(model, y)
+    add_objective(model, y)
+    add_position_constraints(model, y, pos)
 
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = 30
@@ -27,17 +26,17 @@ if st.button("Generate Season"):
             for i in range(6):
                 row = {"Game": g+1, "Inning": i+1}
 
-                for pos in range(9):
-                    for p in range(13):
-                        if solver.Value(x[g,i,p,pos]):
-                            row[pos] = f"P{p+1}"
+                players_in = []
+
+                for p in range(13):
+                    if solver.Value(y[g,i,p]):
+                        players_in.append(p)
+
+                # assign positions cleanly
+                for idx, p in enumerate(players_in):
+                    row[f"slot_{idx}"] = f"P{p+1}"
 
                 rows.append(row)
 
-        df = pd.DataFrame(rows)
-
-        st.success("Season generated successfully!")
-        st.dataframe(df, use_container_width=True)
-
-        csv = df.to_csv(index=False)
-        st.download_button("Download CSV", csv, "season.csv", "text/csv")
+        st.success("Perfectly locked schedule generated")
+        st.dataframe(pd.DataFrame(rows))
