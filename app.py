@@ -42,36 +42,7 @@ if st.button("Generate Season"):
         csv = df.to_csv(index=False)
         st.download_button("Download CSV", csv, "season.csv", "text/csv")
 
-def add_pitching(model, x):
 
-    pitch_plan = [
-        (3,4,6),(9,10,12),(13,3,4),(6,9,10),
-        (12,13,3),(4,6,9),(10,12,13),(3,4,6),
-        (9,10,12),(13,3,4),(6,9,10),(12,13,3),
-        (4,6,9),(10,12,13)
-    ]
-
-    for g in range(14):
-        p1,p2,p3 = pitch_plan[g]
-
-        for i in range(6):
-            if i < 2:
-                model.Add(x[g,i,p1,0] == 1)
-            elif i < 4:
-                model.Add(x[g,i,p2,0] == 1)
-            else:
-                model.Add(x[g,i,p3,0] == 1)
-
-def add_objective(model, x):
-
-    total = []
-
-    for p in range(13):
-        tp = sum(x[g,i,p,pos]
-                 for g in range(14)
-                 for i in range(6)
-                 for pos in range(9))
-        total.append(tp)
 
     avg = (14*6*9)//13
 
