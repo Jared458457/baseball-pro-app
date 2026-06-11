@@ -20,13 +20,15 @@ def build_model():
                 for pos in range(positions):
                     x[g,i,p,pos] = model.NewBoolVar(f"x_{g}_{i}_{p}_{pos}")
 
-    # Each position filled once per inning
+# Each position filled by exactly one player
     for g in range(games):
         for i in range(innings):
             for pos in range(positions):
-                model.Add(sum(x[g,i,p,pos] for p in range(players)) == 1)
-                
-    # Each player can only play ONE position per inning
+                model.Add(
+                    sum(x[g,i,p,pos] for p in range(players)) == 1
+                )    
+
+# Each player plays at most one position per inning (CRITICAL FIX)
     for g in range(games):
         for i in range(innings):
             for p in range(players):
