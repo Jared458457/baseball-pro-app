@@ -70,19 +70,39 @@ def add_pitching(model, x):
             else:
                 model.Add(x[g,i,p3,0] == 1)
 
+from ortools.sat.python import cp_model
 
 def add_objective(model, x):
+
     total = []
 
-    target = (games * innings * positions) // players
+    games = 14
+    innings = 6
+    players = 13
+    positions = 9
+
+    target = (games * innings * positions) // players  # ~58
+
+    deviations = []
 
     for p in range(players):
-        tp = sum(x[g,i,p,pos]
-                 for g in range(games)
-                 for i in range(innings)
-                 for pos in range(positions))
-        total.append(tp)
 
-    model.Minimize(
-        sum((tp - target) * (tp - target) for tp in total)
-    )
+        tp = sum(
+            x[g,i,p,pos]
+            for g in range(games)
+            for i in range(innings)
+            for pos in range(positions)
+        )
+
+        # introduce integer slack variables
+        diff = model.NewIntVar(-100, 100, f"diff_{p}")
+        abs_diff = model.NewIntVar(0, 100, f"abs_diff_{p}")
+
+        model.Add(diff == tp - target)
+
+        model.AddAbsEquality(abs_diff, diff)
+
+        deviations.append(abs_diff)
+
+    model.Minimize(sum(deviations))
+
