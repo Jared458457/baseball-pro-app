@@ -1,19 +1,4 @@
-def add_pitching(model, x):
-
-    pitch_plan = [
-        (2,3,5),(8,9,11),(12,2,3),(5,8,9),
-        (11,12,2),(3,5,8),(9,11,12),(2,3,5),
-        (8,9,11),(12,2,3),(5,8,9),(11,12,2),
-        (3,5,8),(9,11,12)
-    ]
-
-    for g in range(14):
-        p1,p2,p3 = pitch_plan[g]
-
-        for i in range(6):
-            if i < 2:
-                model.Add(x[g,i,p1,0] == 1)
-            elif i < 4:
-                model.Add(x[g,i,p2,0] == 1)
-            else:
-                model.Add(x[g,i,p3,0] == 1)
+streamlit
+ortools
+pandas
+openpyxl
