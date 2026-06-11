@@ -69,6 +69,8 @@ def add_pitching(model, x):
                 model.Add(x[g,i,p2,0] == 1)
             else:
                 model.Add(x[g,i,p3,0] == 1)
+    
+    return model, x
 
 def add_objective(model, x):
 
@@ -80,3 +82,5 @@ def add_objective(model, x):
                  for i in range(6)
                  for pos in range(9))
         total.append(tp)
+
+    return model, x
