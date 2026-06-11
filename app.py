@@ -1,15 +1,16 @@
 import streamlit as st
-from engine import build_model, add_pitching, add_objective
 from ortools.sat.python import cp_model
+from engine import build_model, add_pitching, add_objective
 import pandas as pd
 
 st.set_page_config(page_title="Pro Baseball Coach App", layout="wide")
 
-st.title("⚾ Pro Baseball Coach App (Live)")
+st.title("⚾ Pro Baseball Coach App")
 
-st.write("Generate a fully optimized 14-game season with constraints enforced.")
+st.write("Generate a fully optimized 14-game season.")
 
 if st.button("Generate Season"):
+
     model, x = build_model()
     add_pitching(model, x)
     add_objective(model, x)
@@ -39,11 +40,9 @@ if st.button("Generate Season"):
         st.success("Season generated successfully!")
         st.dataframe(df, use_container_width=True)
 
-        csv = df.to_csv(index=False)
-        st.download_button("Download CSV", csv, "season.csv", "text/csv")
-
-
-
-    avg = (14*6*9)//13
-
-    model.Minimize(sum((tp - avg)*(tp - avg) for tp in total))
+        st.download_button(
+            "Download CSV",
+            df.to_csv(index=False),
+            "season.csv",
+            "text/csv"
+        )
