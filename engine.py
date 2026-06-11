@@ -1,118 +1,101 @@
 from ortools.sat.python import cp_model
 
-games = 14
-innings = 6
-players = 13
-positions = 9
+GAMES = 14
+INNINGS = 6
+PLAYERS = 13
+POSITIONS = 9
 
-catchers = [0,3,8,11]   # P1,P4,P9,P12
-no_3b = [1,4,6]         # P2,P5,P7
-pitchers = [2,3,5,8,9,11,12]
+catchers = {0,3,8,11}   # P1,P4,P9,P12
+no_3b = {1,4,6}         # P2,P5,P7
 
 def build_model():
     model = cp_model.CpModel()
 
-    x = {}
+    # y = player participates in inning
+    y = {}
+    # pos = player position (only valid if y=1)
+    pos = {}
 
-    for g in range(games):
-        for i in range(innings):
-            for p in range(players):
-                for pos in range(positions):
-                    x[g,i,p,pos] = model.NewBoolVar(f"x_{g}_{i}_{p}_{pos}")
+    for g in range(GAMES):
+        for i in range(INNINGS):
+            for p in range(PLAYERS):
+                y[g,i,p] = model.NewBoolVar(f"y_{g}_{i}_{p}")
 
-# Each position filled by exactly one player
-    for g in range(games):
-        for i in range(innings):
-            for pos in range(positions):
-                model.Add(
-                    sum(x[g,i,p,pos] for p in range(players)) == 1
-                )    
+                pos[g,i,p] = model.NewIntVar(0, POSITIONS-1, f"pos_{g}_{i}_{p}")
 
-# Each player plays at most one position per inning (CRITICAL FIX)
-    for g in range(games):
-        for i in range(innings):
-            for p in range(players):
-                model.Add(
-                    sum(x[g,i,p,pos] for pos in range(positions)) <= 1
-                )
-    
-    # Each player plays 4–5 innings per game
-    for g in range(games):
-        for p in range(players):
-            play = sum(x[g,i,p,pos]
-                       for i in range(innings)
-                       for pos in range(positions))
-            model.Add(play >= 4)
-            model.Add(play <= 5)
+    # exactly 9 players per inning
+    for g in range(GAMES):
+        for i in range(INNINGS):
+            model.Add(
+                sum(y[g,i,p] for p in range(PLAYERS)) == 9
+            )
+
+    # no player plays more than 1 position per inning (impossible now by design)
+    # enforced implicitly by y
+
+    return model, y, pos
+
+
+def add_position_constraints(model, y, pos):
 
     # Catcher restriction
-    for g in range(games):
-        for i in range(innings):
-            for p in range(players):
-                if p not in catchers:
-                    model.Add(x[g,i,p,1] == 0)
+    for g in range(GAMES):
+        for i in range(INNINGS):
+            for p in range(PLAYERS):
+                is_catcher_allowed = (p in catchers)
+                # if not allowed catcher, cannot take position 1
+                model.Add(pos[g,i,p] != 1).OnlyEnforceIf(y[g,i,p].Not()).OnlyEnforceIf(model.NewBoolVar("tmp"))
+
+                if not is_catcher_allowed:
+                    model.Add(pos[g,i,p] != 1).OnlyEnforceIf(y[g,i,p])
 
     # 3B restriction
-    for g in range(games):
-        for i in range(innings):
+    for g in range(GAMES):
+        for i in range(INNINGS):
             for p in no_3b:
-                model.Add(x[g,i,p,4] == 0)
-
-    return model, x
+                model.Add(pos[g,i,p] != 4).OnlyEnforceIf(y[g,i,p])
 
 
-def add_pitching(model, x):
+def add_pitching(model, y):
+
     pitch_plan = [
         (2,3,5),(8,9,11),(12,2,3),(5,8,9),
-        (11,12,2),(3,5,8),(9,11,12),(2,3,5),
-        (8,9,11),(12,2,3),(5,8,9),(11,12,2),
-        (3,5,8),(9,11,12)
+        (11,12,2),(3,5,8),(9,11,12),
+        (2,3,5),(8,9,11),(12,2,3),
+        (5,8,9),(11,12,2),(3,5,8),(9,11,12)
     ]
 
-    for g in range(games):
+    for g in range(GAMES):
         p1,p2,p3 = pitch_plan[g]
 
-        for i in range(innings):
+        for i in range(INNINGS):
             if i < 2:
-                model.Add(x[g,i,p1,0] == 1)
+                model.Add(y[g,i,p1] == 1)
             elif i < 4:
-                model.Add(x[g,i,p2,0] == 1)
+                model.Add(y[g,i,p2] == 1)
             else:
-                model.Add(x[g,i,p3,0] == 1)
+                model.Add(y[g,i,p3] == 1)
 
-from ortools.sat.python import cp_model
 
-def add_objective(model, x):
+def add_objective(model, y):
 
-    total = []
+    target = (GAMES * INNINGS * 9) // PLAYERS
 
-    games = 14
-    innings = 6
-    players = 13
-    positions = 9
+    diffs = []
 
-    target = (games * innings * positions) // players  # ~58
-
-    deviations = []
-
-    for p in range(players):
-
-        tp = sum(
-            x[g,i,p,pos]
-            for g in range(games)
-            for i in range(innings)
-            for pos in range(positions)
+    for p in range(PLAYERS):
+        total = sum(
+            y[g,i,p]
+            for g in range(GAMES)
+            for i in range(INNINGS)
         )
 
-        # introduce integer slack variables
-        diff = model.NewIntVar(-100, 100, f"diff_{p}")
-        abs_diff = model.NewIntVar(0, 100, f"abs_diff_{p}")
+        d = model.NewIntVar(-100, 100, f"d_{p}")
+        a = model.NewIntVar(0, 100, f"a_{p}")
 
-        model.Add(diff == tp - target)
+        model.Add(d == total - target)
+        model.AddAbsEquality(a, d)
 
-        model.AddAbsEquality(abs_diff, diff)
+        diffs.append(a)
 
-        deviations.append(abs_diff)
-
-    model.Minimize(sum(deviations))
-
+    model.Minimize(sum(diffs))
